@@ -1,0 +1,225 @@
+{
+	"BUILD_DIR" : "/home/diogo/Desktop/RM/assign2/ciberRatoTools/build/Viewer/Viewer_autogen",
+	"CMAKE_BINARY_DIR" : "/home/diogo/Desktop/RM/assign2/ciberRatoTools/build",
+	"CMAKE_CURRENT_BINARY_DIR" : "/home/diogo/Desktop/RM/assign2/ciberRatoTools/build/Viewer",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer",
+	"CMAKE_EXECUTABLE" : "/usr/bin/cmake",
+	"CMAKE_SOURCE_DIR" : "/home/diogo/Desktop/RM/assign2/ciberRatoTools",
+	"HEADERS" : 
+	[
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Comm/crqcomm.h",
+			"MU",
+			"BLIUQPIODL/moc_crqcomm.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Comm/crqcommhandler.h",
+			"MU",
+			"BLIUQPIODL/moc_crqcommhandler.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Comm/crqreplyhandler.h",
+			"MU",
+			"BLIUQPIODL/moc_crqreplyhandler.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crbeacon.h",
+			"MU",
+			"JRLBQU3MDE/moc_crbeacon.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crgrid.h",
+			"MU",
+			"JRLBQU3MDE/moc_crgrid.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crlab.h",
+			"MU",
+			"JRLBQU3MDE/moc_crlab.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crrobot.h",
+			"MU",
+			"JRLBQU3MDE/moc_crrobot.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crtarget.h",
+			"MU",
+			"JRLBQU3MDE/moc_crtarget.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crvertice.h",
+			"MU",
+			"JRLBQU3MDE/moc_crvertice.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crwall.h",
+			"MU",
+			"JRLBQU3MDE/moc_crwall.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crmainparameters.h",
+			"MU",
+			"EWIEGA46WW/moc_crmainparameters.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crqdataview.h",
+			"MU",
+			"EWIEGA46WW/moc_crqdataview.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crqlabview.h",
+			"MU",
+			"EWIEGA46WW/moc_crqlabview.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crqparamhandler.h",
+			"MU",
+			"EWIEGA46WW/moc_crqparamhandler.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crqrobotinfo.h",
+			"MU",
+			"EWIEGA46WW/moc_crqrobotinfo.cpp"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crqscene.h",
+			"MU",
+			"EWIEGA46WW/moc_crqscene.cpp"
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "/home/diogo/Desktop/RM/assign2/ciberRatoTools/build/Viewer/Viewer_autogen/include",
+	"MOC_COMPILATION_FILE" : "/home/diogo/Desktop/RM/assign2/ciberRatoTools/build/Viewer/Viewer_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : 
+	[
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_MULTIMEDIA_LIB",
+		"QT_NETWORK_LIB",
+		"QT_NO_DEBUG",
+		"QT_WIDGETS_LIB",
+		"QT_XML_LIB"
+	],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : 
+	[
+		"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer",
+		"/home/diogo/Desktop/RM/assign2/ciberRatoTools/build/Viewer",
+		"/usr/include/x86_64-linux-gnu/qt5",
+		"/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
+		"/usr/include/x86_64-linux-gnu/qt5/QtGui",
+		"/usr/include/x86_64-linux-gnu/qt5/QtCore",
+		"/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++",
+		"/usr/include/x86_64-linux-gnu/qt5/QtNetwork",
+		"/usr/include/x86_64-linux-gnu/qt5/QtXml",
+		"/usr/include/x86_64-linux-gnu/qt5/QtMultimedia",
+		"/usr/include/c++/9",
+		"/usr/include/x86_64-linux-gnu/c++/9",
+		"/usr/include/c++/9/backward",
+		"/usr/lib/gcc/x86_64-linux-gnu/9/include",
+		"/usr/local/include",
+		"/usr/include/x86_64-linux-gnu",
+		"/usr/include"
+	],
+	"MOC_MACRO_NAMES" : [ "Q_OBJECT", "Q_GADGET", "Q_NAMESPACE" ],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : true,
+	"MOC_PREDEFS_CMD" : 
+	[
+		"/usr/bin/c++",
+		"-dM",
+		"-E",
+		"-c",
+		"/usr/share/cmake-3.16/Modules/CMakeCXXCompilerABI.cpp"
+	],
+	"MOC_PREDEFS_FILE" : "/home/diogo/Desktop/RM/assign2/ciberRatoTools/build/Viewer/Viewer_autogen/moc_predefs.h",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 6,
+	"PARSE_CACHE_FILE" : "/home/diogo/Desktop/RM/assign2/ciberRatoTools/build/Viewer/CMakeFiles/Viewer_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "/usr/lib/qt5/bin/moc",
+	"QT_UIC_EXECUTABLE" : "/usr/lib/qt5/bin/uic",
+	"QT_VERSION_MAJOR" : 5,
+	"SETTINGS_FILE" : "/home/diogo/Desktop/RM/assign2/ciberRatoTools/build/Viewer/CMakeFiles/Viewer_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : 
+	[
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Comm/crqcomm.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Comm/crqcommhandler.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Comm/crqreplyhandler.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crbeacon.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crgrid.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crlab.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crrobot.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crtarget.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crvertice.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/Lab/crwall.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crmainparameters.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crqdataview.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crqlabview.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crqparamhandler.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crqrobotinfo.cpp",
+			"MU"
+		],
+		[
+			"/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/crqscene.cpp",
+			"MU"
+		],
+		[ "/home/diogo/Desktop/RM/assign2/ciberRatoTools/Viewer/main.cpp", "MU" ]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : [],
+	"UIC_UI_FILES" : [],
+	"VERBOSITY" : 0
+}
