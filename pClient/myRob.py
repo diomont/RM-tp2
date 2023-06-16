@@ -6,12 +6,16 @@ from math import *
 
 Coords = Tuple[int, int]
 
-GOAL_THRESH = 0.1
-TURNING_THRESH = 0.2
+GOAL_THRESH = 0.05
+TURNING_THRESH = 0.1
 DRIVE_STRAIGHT_THRESH = 0.05
-SENSOR_DIST_TO_NODE_THRESH = 0.2
-UPDATE_ANGLE_TOLERANCE = pi/2*0.03
+ROBOT_DIST_TO_NODE_THRESH = 0.1
+UPDATE_ANGLE_TOLERANCE = pi/2*0.06
 WALL_THICKNESS = 0.1
+
+NODE_RANGE_THRESH = 0.3
+MIN_READINGS_TO_UPDATE = 4
+MIN_MOVEMENT_TO_UPDATE = 0.5
 
 
 
@@ -21,6 +25,7 @@ class MyRob(CRobLinkAngs):
 
         self.fname = fname
         self.nodemap = NodeMap()
+        self.node_neighborhood = None
         self.plan = []
 
         self.diameter = 1
@@ -50,63 +55,63 @@ class MyRob(CRobLinkAngs):
         self.pose[2] = radians(self.measures.compass)
 
 
-        # correct position with linesensor measures, if either left half or right half is detecting line
-        if not self.entered_line \
-        and all(s == "1" for s in self.measures.lineSensor[3:]) \
-        or all(s == "1" for s in self.measures.lineSensor[:4]):
+        # # correct position with linesensor measures, if either left half or right half is detecting line
+        # if not self.entered_line \
+        # and all(s == "1" for s in self.measures.lineSensor[3:]) \
+        # or all(s == "1" for s in self.measures.lineSensor[:4]):
             
-            self.entered_line = True
+        #     self.entered_line = True
 
-            # offset from robot center position to sensor position
-            offset_x = cos(self.pose[2])*self.line_sensor_dist
-            offset_y = sin(self.pose[2])*self.line_sensor_dist
+        #     # offset from robot center position to sensor position
+        #     offset_x = cos(self.pose[2])*self.line_sensor_dist
+        #     offset_y = sin(self.pose[2])*self.line_sensor_dist
 
-            # determine where predicted sensor position is
-            sensor_pos_x = self.pose[0] + offset_x
-            sensor_pos_y = self.pose[1] + offset_y
+        #     # determine where predicted sensor position is
+        #     sensor_pos_x = self.pose[0] + offset_x
+        #     sensor_pos_y = self.pose[1] + offset_y
 
-            # determine closest node position to sensor
-            node_x = round(sensor_pos_x)
-            node_y = round(sensor_pos_y)
-            # if one of the coordinates is odd, abort
-            #if node_x % 2 != 0 or node_y % 2 != 0:
-            #    self.entered_line = False
-            #    return
+        #     # determine closest node position to sensor
+        #     node_x = round(sensor_pos_x)
+        #     node_y = round(sensor_pos_y)
+        #     # if one of the coordinates is odd, abort
+        #     #if node_x % 2 != 0 or node_y % 2 != 0:
+        #     #    self.entered_line = False
+        #     #    return
 
-            # determined corrected sensor position
-            correction_x = sensor_pos_x
-            correction_y = sensor_pos_y
-            facing: Literal[None, "up", "down", "left", "right"] = None
+        #     # determined corrected sensor position
+        #     correction_x = sensor_pos_x
+        #     correction_y = sensor_pos_y
+        #     facing: Literal[None, "up", "down", "left", "right"] = None
 
-            if abs(offset_x) < abs(offset_y) and offset_y > 0:
-                correction_y = node_y
-                facing = "up"
-            elif abs(offset_x) < abs(offset_y) and offset_y < 0:
-                correction_y = node_y
-                facing = "down"
-            elif abs(offset_y) < abs(offset_x) and offset_x > 0:
-                correction_x = node_x
-                facing = "right"
-            elif abs(offset_y) < abs(offset_x) and offset_x < 0:
-                correction_x = node_x
-                facing = "left"
+        #     if abs(offset_x) < abs(offset_y) and offset_y > 0:
+        #         correction_y = node_y
+        #         facing = "up"
+        #     elif abs(offset_x) < abs(offset_y) and offset_y < 0:
+        #         correction_y = node_y
+        #         facing = "down"
+        #     elif abs(offset_y) < abs(offset_x) and offset_x > 0:
+        #         correction_x = node_x
+        #         facing = "right"
+        #     elif abs(offset_y) < abs(offset_x) and offset_x < 0:
+        #         correction_x = node_x
+        #         facing = "left"
             
-            corrected_sensor = (correction_x, correction_y)
+        #     corrected_sensor = (correction_x, correction_y)
 
 
-            # does position need correction? (update only if it should not be possible to see the line from predicted position)
-            corrected_pos_x = corrected_sensor[0] - offset_x
-            corrected_pos_y = corrected_sensor[1] - offset_y
-            if (facing == "up" and self.pose[1] < corrected_pos_y - WALL_THICKNESS) \
-            or (facing == "down" and self.pose[1] > corrected_pos_y + WALL_THICKNESS) \
-            or (facing == "left" and self.pose[0] > corrected_pos_x + WALL_THICKNESS) \
-            or (facing == "right" and self.pose[0] < corrected_pos_x - WALL_THICKNESS):
-                print(f"correcting position from {(self.pose[0], self.pose[1])} to {(corrected_pos_x, corrected_pos_y)}")
-                self.pose[0] = corrected_pos_x
-                self.pose[1] = corrected_pos_y
+        #     # does position need correction? (update only if it should not be possible to see the line from predicted position)
+        #     corrected_pos_x = corrected_sensor[0] - offset_x
+        #     corrected_pos_y = corrected_sensor[1] - offset_y
+        #     if (facing == "up" and self.pose[1] < corrected_pos_y - WALL_THICKNESS) \
+        #     or (facing == "down" and self.pose[1] > corrected_pos_y + WALL_THICKNESS) \
+        #     or (facing == "left" and self.pose[0] > corrected_pos_x + WALL_THICKNESS) \
+        #     or (facing == "right" and self.pose[0] < corrected_pos_x - WALL_THICKNESS):
+        #         print(f"correcting position from {(self.pose[0], self.pose[1])} to {(corrected_pos_x, corrected_pos_y)}")
+        #         self.pose[0] = corrected_pos_x
+        #         self.pose[1] = corrected_pos_y
 
-        else:
-            self.entered_line = False
+        # else:
+        #     self.entered_line = False
 
 
 
@@ -125,9 +130,24 @@ class MyRob(CRobLinkAngs):
         x, y, th = self.pose
         # check if close enough to destination to remove from plan
         if abs(dest[0] - x) < GOAL_THRESH and abs(dest[1] - y) < GOAL_THRESH:
+            #print(f"reached destination {dest} ({(x,y,th)})")
+            self.commit_neighbors()
             self.plan.pop(0)
-            if not self.plan: return
+            if not self.plan:
+                self.out1, self.out2 = 0, 0
+                # apply movement model to pose
+                lin = (self.out1 + self.out2)/2
+                new_x = x + lin*cos(th)
+                new_y = y + lin*sin(th)
+                new_th = th + (self.out2 - self.out1)/self.diameter
+                # wrap orientation to [-pi, pi]
+                new_th = new_th % (2*pi)
+                if new_th > pi: new_th = -(2*pi - new_th)
+                self.pose = [new_x, new_y, new_th]
+                self.driveMotors(0,0)
+                return
             dest = self.plan[0]
+            
 
         # determine whether to rotate in place or go forward
         ang = atan2( dest[1]-y, dest[0]-x )
@@ -139,15 +159,21 @@ class MyRob(CRobLinkAngs):
         if diff > pi: diff = -(2*pi - diff)
 
 
-        if abs(diff) < DRIVE_STRAIGHT_THRESH: #or abs(diff) > 2*pi - 0.05:
+        if abs(diff) < DRIVE_STRAIGHT_THRESH:
             # destination is straight ahead (...almost)
             self.out1, self.out2 = 0.1, 0.1
-        elif abs(diff) > TURNING_THRESH and diff < 0: #and (diff < 0 or diff >= pi):
+        elif abs(diff) > TURNING_THRESH*2 and diff < 0:
             # destination is to the left of current orientation
             self.out1, self.out2 = -0.05, 0.05
-        elif abs(diff) > TURNING_THRESH and diff > 0:
+        elif abs(diff) > TURNING_THRESH and diff < 0:
+            # destination is slightly left of current orientation
+            self.out1, self.out2 = 0.05, 0.08
+        elif abs(diff) > TURNING_THRESH*2 and diff > 0:
             # destination is to the right of current orientation
             self.out1, self.out2 = 0.05, -0.05
+        elif abs(diff) > TURNING_THRESH and diff > 0:
+            # destination is slightly right of current orientation
+            self.out1, self.out2 = 0.08, 0.05
 
 
         # apply movement model to pose
@@ -181,114 +207,165 @@ class MyRob(CRobLinkAngs):
 
 
 
+    def update_neighbors(self):
+
+        sensor_pos_x = self.pose[0] + cos(self.pose[2])*self.line_sensor_dist
+        sensor_pos_y = self.pose[1] + sin(self.pose[2])*self.line_sensor_dist
+
+        # closest node to sensor
+        node_x = round(sensor_pos_x)
+        node_y = round(sensor_pos_y)
+        if node_x % 2 != 0 or node_y % 2 != 0: return
+        if self.nodemap.get_node((node_x, node_y)).explored: return
+
+
+        # some tolerance in angle ranges
+        tol = UPDATE_ANGLE_TOLERANCE
+
+        facing = None
+
+        if pi/2-tol < self.pose[2] < pi/2+tol:
+            facing = "up"
+        elif -pi/2-tol < self.pose[2] < -pi/2+tol:
+            facing = "down"
+        elif (pi-tol < self.pose[2] or self.pose[2] < -pi+tol):
+            facing = "left"
+        elif -tol < self.pose[2] < tol:
+            facing = "right"
+        else:
+            # don't update if not facing up, down, left or right
+            #print("outside tolerance, discarding reading...")
+            return
+        
+
+        # when the sensor enters the area around a node
+        node_dist = sqrt( (node_x - sensor_pos_x)**2 + (node_y - sensor_pos_y)**2 )
+        if node_dist > NODE_RANGE_THRESH: return
+
+        if self.node_neighborhood == None:
+            self.node_neighborhood = {
+                "readings": 0,
+                "starting_pos": (self.pose[0], self.pose[1]),
+                "node": (node_x,node_y),
+                "facing": facing,
+                "left": False, "right": False   # if left/right side of line sensor have detected something
+            }
+
+        ### update neighborhood
+        self.node_neighborhood["readings"] += 1
+        if self.measures.lineSensor[0] == "1":  self.node_neighborhood["left"] = True
+        if self.measures.lineSensor[-1] == "1": self.node_neighborhood["right"] = True
+
+
+    def commit_neighbors(self):
+
+        if self.node_neighborhood == None: return
+
+        x, y = self.node_neighborhood["node"]
+        ix, iy = self.node_neighborhood["starting_pos"]
+
+        # only commit edges if enough readings were made
+        if self.node_neighborhood["readings"] < MIN_READINGS_TO_UPDATE:
+            print(f"Not enough readings ({self.node_neighborhood['readings']}), not commiting...")
+            self.node_neighborhood = None
+            return
+        # only commit edges if robot moved more than set amount
+        if sqrt( (self.pose[0] - ix)**2 + (self.pose[1] - iy)**2 ) < MIN_MOVEMENT_TO_UPDATE:
+            print(f"Not enough distance ({sqrt( (self.pose[0] - ix)**2 + (self.pose[1] - iy)**2 )}), not commiting...")
+            self.node_neighborhood = None
+            return
+
+        # left and right refer to robot's relative left and right, not global
+        left, right = self.node_neighborhood["left"], self.node_neighborhood["right"]
+
+        # facing refers to global orientation
+        if self.node_neighborhood["facing"] == "up":
+            l_node = (x-2,y)
+            r_node = (x+2,y)
+        elif self.node_neighborhood["facing"] == "down":
+            l_node = (x+2,y)
+            r_node = (x-2,y)
+        elif self.node_neighborhood["facing"] == "left":
+            l_node = (x,y-2)
+            r_node = (x,y+2)
+        else:
+            l_node = (x,y+2)
+            r_node = (x,y-2)
+
+        try:
+            self.nodemap.add_new_path((x,y), l_node, null_path=(not left))
+        except Exception as e:
+            print(f"Failed to add edge between {(x, y)} and {l_node}")
+            print(f"  Null edge: {not left}")
+            print(f"  {self.pose}")
+            print(f"  {e}")
+        try:
+            self.nodemap.add_new_path((x,y), r_node, null_path=(not right))
+        except Exception as e:
+            print(f"Failed to add edge between {(x, y)} and {r_node}")
+            print(f"  Null edge: {not right}")
+            print(f"  {self.pose}")
+            print(f"  {e}")
+
+        self.node_neighborhood = None
+
+
     def update_map(self):
         """
         Uses the current sensor measures to update the map (locating spots, adding paths to map).
+        Only updates paths between closest current node and the node in front of it.
         """
 
         # some tolerance in angle ranges
         tol = UPDATE_ANGLE_TOLERANCE
 
-        # don't update map if not facing up, down, left or right
-        # if not (
-        #     pi/2-tol < self.pose[2] < pi/2+tol
-        #     or pi*1.5-tol < self.pose[2] < pi*1.5+tol
-        #     or (2*pi-tol < self.pose[2] or self.pose[2] < tol)
-        #     or pi-tol < self.pose[2] < pi+tol
-        # ):
-        if not (
-            pi/2-tol < self.pose[2] < pi/2+tol
-            or -pi/2-tol < self.pose[2] < -pi/2+tol
-            or (pi-tol < self.pose[2] or self.pose[2] < -pi+tol)
-            or -tol < self.pose[2] < tol
-        ):
+        facing = None
+
+        if pi/2-tol < self.pose[2] < pi/2+tol:
+            facing = "up"
+        elif -pi/2-tol < self.pose[2] < -pi/2+tol:
+            facing = "down"
+        elif (pi-tol < self.pose[2] or self.pose[2] < -pi+tol):
+            facing = "left"
+        elif -tol < self.pose[2] < tol:
+            facing = "right"
+        else:
+            # don't update if not facing up, down, left or right
             return
-        
+    
 
         # don't update if robot not near node coordinates
-        rounded_x = round(self.pose[0])
-        rounded_y = round(self.pose[1])
+        node_x = round(self.pose[0])
+        node_y = round(self.pose[1])
         if (
-            abs(rounded_x - self.pose[0]) > SENSOR_DIST_TO_NODE_THRESH
-            or abs(rounded_y - self.pose[1]) > SENSOR_DIST_TO_NODE_THRESH
-            or rounded_x % 2 != 0
-            or rounded_y % 2 != 0
+            #abs(node_x - self.pose[0]) > ROBOT_DIST_TO_NODE_THRESH
+            #or abs(node_y - self.pose[1]) > ROBOT_DIST_TO_NODE_THRESH
+            sqrt( (node_x - self.pose[0])**2 + (node_y - self.pose[1])**2 ) > ROBOT_DIST_TO_NODE_THRESH
+            or node_x % 2 != 0
+            or node_y % 2 != 0
         ):
             return
 
+        if self.measures.ground != -1:
+            self.nodemap.set_beacon((node_x, node_y), self.measures.ground)
 
-        sensor_pos_x = self.pose[0] + cos(self.pose[2])*self.line_sensor_dist
-        sensor_pos_y = self.pose[1] + sin(self.pose[2])*self.line_sensor_dist
+        if facing == "up":
+            next_node = (node_x, node_y+2)
+        elif facing == "down":
+            next_node = (node_x, node_y-2)
+        elif facing == "left":
+            next_node = (node_x-2, node_y)
+        else:
+            next_node = (node_x+2, node_y)
 
-        # # TODO: don't update if sensor_pos is too close to node, to deal with position error?
-        # far_from_node = True
-        # closest_node = (round(sensor_pos_x), round(sensor_pos_y))
-        # if closest_node[0] % 2 == 0 and closest_node[1] % 2 == 0:
-        #     dist_to_node = abs(sensor_pos_x - closest_node[0]) + abs(sensor_pos_y - closest_node[1])
-        #     if dist_to_node < SENSOR_DIST_TO_NODE_THRESH: 
-        #         far_from_node = False
-        
-
-        if pi/2-tol < self.pose[2] < pi/2+tol \
-        or -pi/2-tol < self.pose[2] < -pi/2+tol:
-            # facing up or down
-
-            # nearest node coordinates
-            x = round(sensor_pos_x)
-            if x % 2 != 0: return  # don't update if the fixed coordinate is odd
-            y_down = floor(sensor_pos_y)
-            y_up = ceil(sensor_pos_y)
-            if y_down == y_up:
-                return # i don't feel like programming this edge case
-            elif y_down % 2 == 0:
-                y_up += 1     # down is closest to node, move y_up further up to match closest node coordinate up
-            else:
-                y_down -= 1   # up is closest to node, move y_down further down to match closest node coordinate down
-
-            try:
-                if any(v == "1" for v in self.measures.lineSensor):                
-                    # add new path between nodes
-                    self.nodemap.add_new_path((x,y_up), (x,y_down))
-                elif not any(v == "1" for v in self.measures.lineSensor):
-                    # no edge between nodes
-                    self.nodemap.add_new_path((x,y_up), (x,y_down), null_path=True)
-            except Exception as e:
-                print(self.pose)
-                print(sensor_pos_x, sensor_pos_y)
-                print(f"x: {x}, up: {y_up}, down: {y_down}")
-                print(e)
-
-        elif (pi-tol < self.pose[2] or self.pose[2] < -pi+tol) \
-        or   -tol < self.pose[2] < tol:
-            # facing left or right
-
-            # nearest node coordinates
-            y = round(sensor_pos_y)
-            if y % 2 != 0: return  # don't update if the fixed coordinate is odd
-            x_left = floor(sensor_pos_x)
-            x_right = ceil(sensor_pos_x)
-            if x_left == x_right:
-                return # i don't feel like programming this edge case
-            elif x_left % 2 == 0:
-                x_right += 1  # left is closest to node, move x_right further right to match closest node coordinate to the right
-            else:
-                x_left -= 1   # right is closest to node, move x_left further left to match closest node coordinate to the left
-
-            try:
-                if any(v == "1" for v in self.measures.lineSensor):
-                    # add new path between nodes
-                    self.nodemap.add_new_path((x_left,y), (x_right,y))
-                elif not any(v == "1" for v in self.measures.lineSensor):
-                    # no edge between nodes
-                    self.nodemap.add_new_path((x_left,y), (x_right,y), null_path=True)
-            except Exception as e:
-                print(self.pose)
-                print(sensor_pos_x, sensor_pos_y)
-                print(f"y: {y}, left: {x_left}, right: {x_right}")
-                print(e)
-
-
-        # TODO: update map with line sensor readings from edges of sensor
+        line_detected = any(m == "1" for m in self.measures.lineSensor[2:5])
+        try:
+            self.nodemap.add_new_path((node_x,node_y), next_node, null_path=(not line_detected))
+        except Exception as e:
+            print(f"Failed to add edge between {(node_x, node_y)} and {next_node}")
+            print(f"  Null edge: {not line_detected}")
+            print(f"  {self.pose}")
+            print(f"  {e}")
 
         self.write_map_to_file()
 
@@ -328,13 +405,14 @@ class MyRob(CRobLinkAngs):
 
                 # always move according to plan if there is one
                 if self.plan:
+                    self.update_neighbors()
                     self.move_by_plan()
                 # if there is no plan and there is still more to explore, get new destination
                 elif phase == "exploring" and not self.nodemap.is_fully_explored():
                     curr_pos = (round(self.pose[0]), round(self.pose[1]))
 
                     if not self.nodemap.get_node(curr_pos).explored:
-                        print("Spinning at", (self.pose[0], self.pose[1]))
+                        #print("Spinning at", (self.pose[0], self.pose[1]))
                         self.spin()
                     else:
                         next_dest = self.nodemap.get_closest_unexplored(curr_pos)
@@ -411,7 +489,7 @@ class NodeMap():
                 if self.explored:
                     raise Exception(f"Cannot add edge towards {(node.x, node.y)}, node {self} already fully explored!")
                 self.edges.append(node)
-                print(f"Added edge between {(self.x, self.y)} and {(node.x, node.y)}")
+                #print(f"Added edge between {(self.x, self.y)} and {(node.x, node.y)}")
 
         
         def add_null_edge(self, direction: Literal["up", "down", "left", "right"]):
@@ -468,6 +546,17 @@ class NodeMap():
         y = int(y/2 + 5)
         return self.nodes[x][y]
     
+    def set_beacon(self, coords: Coords, beacon_id: int):
+        x,y = coords
+        x = int(x/2 + 12)
+        y = int(y/2 + 5)
+
+        if self.nodes[x][y] is None:
+            self.add_node(self.Node(coords), beacon_id)
+        else:
+            self.beacon_coords[beacon_id] = (coords[0], coords[1])
+            self.coords_to_beacon[(coords[0], coords[1])] = beacon_id
+
     def add_new_path(self, origin: Coords, end: Coords, null_path = False):
         """Adds edge between nodes at origin and end coordinates, creating those node if they don't exist.
         If `null_path` is True, adds a null edge, meaning there is no path between those nodes."""
@@ -497,7 +586,7 @@ class NodeMap():
             else:  # origin bellow end
                 origin_node.add_null_edge("up")
                 end_node.add_null_edge("down")
-            print(f"Added null edge between {origin} and {end}")
+            #print(f"Added null edge between {origin} and {end}")
 
     def is_fully_explored(self) -> bool:
         return all( self.nodes[x][y].explored for x,y in self.node_coords )
@@ -604,8 +693,8 @@ if __name__ == '__main__':
     
     try:
         rob.run()
+        #rob.test()
     except KeyboardInterrupt:
         for node in [ rob.nodemap.nodes[x][y] for x,y in rob.nodemap.node_coords ]:
             print(str(node))
         quit()
-    #rob.test()
