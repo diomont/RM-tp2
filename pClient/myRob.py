@@ -3,6 +3,7 @@ import sys
 from typing import List, Literal, Tuple, Union
 from croblink import *
 from math import *
+from itertools import permutations
 
 Coords = Tuple[int, int]
 
@@ -38,13 +39,40 @@ class MyRob(CRobLinkAngs):
         self.out2 = 0
 
 
-
     def plan_final_path(self) -> List[Coords]:
-        """Plans shortest path that passes through all spots, starting and ending on position 0"""
+        """Plans shortest path that passes through all spots, starting and ending on position 0, and write to file"""
 
-        # calculate shortest path between every pair of beacons and find smallest sum?
+        beacon_count = len(self.nodemap.beacon_coords)
+        beacon_plans = {}
 
-        pass
+        # calculate best plan for every beacon pairing
+        for id1, coords1 in self.nodemap.beacon_coords.items():
+            for id2, coords2 in self.nodemap.beacon_coords.items():
+                if id1 == id2: continue
+                beacon_plans[(id1, id2)] = self.nodemap.plan_path(coords1, coords2)
+
+        # check all possible beacon sequences to see which has shortest path
+        best_plan = None
+        best_score = 10000
+
+        for seq in permutations(range(1, beacon_count)):
+            seq = [0] + list(seq) + [0]
+
+            plan = []
+            for i in range(len(seq)-1):
+                pair = (seq[i], seq[i+1])
+                plan.extend( beacon_plans[pair][:-1] )
+            plan.append((0,0))
+
+            score = len(plan)
+            if score < best_score:
+                best_plan = plan
+                best_score = score
+
+        with open(self.fname + ".path", "w") as f:
+            for p in best_plan:
+                f.write(f"{p[0]} {p[1]}\n")
+
 
     def correct_estimation(self):
         """Uses line sensor and compass measures to correct its position and orientation estimate."""
@@ -316,6 +344,23 @@ class MyRob(CRobLinkAngs):
         Only updates paths between closest current node and the node in front of it.
         """
 
+        # don't update if robot not near node coordinates
+        node_x = round(self.pose[0])
+        node_y = round(self.pose[1])
+        if (
+            #abs(node_x - self.pose[0]) > ROBOT_DIST_TO_NODE_THRESH
+            #or abs(node_y - self.pose[1]) > ROBOT_DIST_TO_NODE_THRESH
+            sqrt( (node_x - self.pose[0])**2 + (node_y - self.pose[1])**2 ) > ROBOT_DIST_TO_NODE_THRESH
+            or node_x % 2 != 0
+            or node_y % 2 != 0
+        ):
+            return
+
+        self.nodemap.visit_node((node_x, node_y))
+        if self.measures.ground != -1:
+            self.nodemap.set_beacon((node_x, node_y), self.measures.ground)
+
+
         # some tolerance in angle ranges
         tol = UPDATE_ANGLE_TOLERANCE
 
@@ -333,21 +378,6 @@ class MyRob(CRobLinkAngs):
             # don't update if not facing up, down, left or right
             return
     
-
-        # don't update if robot not near node coordinates
-        node_x = round(self.pose[0])
-        node_y = round(self.pose[1])
-        if (
-            #abs(node_x - self.pose[0]) > ROBOT_DIST_TO_NODE_THRESH
-            #or abs(node_y - self.pose[1]) > ROBOT_DIST_TO_NODE_THRESH
-            sqrt( (node_x - self.pose[0])**2 + (node_y - self.pose[1])**2 ) > ROBOT_DIST_TO_NODE_THRESH
-            or node_x % 2 != 0
-            or node_y % 2 != 0
-        ):
-            return
-
-        if self.measures.ground != -1:
-            self.nodemap.set_beacon((node_x, node_y), self.measures.ground)
 
         if facing == "up":
             next_node = (node_x, node_y+2)
@@ -416,6 +446,15 @@ class MyRob(CRobLinkAngs):
                         self.spin()
                     else:
                         next_dest = self.nodemap.get_closest_unexplored(curr_pos)
+                        if next_dest is None:
+                            print("Done exploring!")
+                            phase = "finalizing"
+                            self.plan_final_path()
+                            curr_pos = (round(self.pose[0]), round(self.pose[1]))
+                            self.plan = self.nodemap.plan_path(curr_pos, (0,0))
+                            self.setReturningLed(True)
+                            continue
+
                         self.plan = self.nodemap.plan_path(curr_pos, next_dest)
                         print(f"Going from {(self.pose[0], self.pose[1])} to {next_dest} now...")
                         print("Plan:", self.plan)
@@ -425,8 +464,7 @@ class MyRob(CRobLinkAngs):
                     print("Done exploring!")
                     phase = "finalizing"
                     self.plan_final_path()
-                    # TODO: write path to file
-                    curr_pos = (round(self.pose[0], round(self.pose[1])))
+                    curr_pos = (round(self.pose[0]), round(self.pose[1]))
                     self.plan = self.nodemap.plan_path(curr_pos, (0,0))
                     self.setReturningLed(True)
                 # not exploring and no plan, meaning robot has returned to (0,0) and accomplished all tasks
@@ -439,8 +477,6 @@ class MyRob(CRobLinkAngs):
 
     
     def test(self):
-
-        #print(self.measures.lineSensor)
 
         state = 'stop'
         stopped_state = 'run'
@@ -483,6 +519,7 @@ class NodeMap():
             self.y = coords[1]
             self.edges = [starting_edge] if starting_edge else []
             self.null_edges = set()  # can contain "up", "down", "left" and "right". their presence means that there is no path in that direction
+            self.visited = False
         
         def add_edge(self, node):
             if node not in self.edges:
@@ -500,7 +537,7 @@ class NodeMap():
         @property
         def explored(self):
             """A node is considered to be explored when 4 edges or null edges are known"""
-            return len(self.edges) + len(self.null_edges) == 4
+            return len(self.edges) + len(self.null_edges) == 4 and self.visited
         
         @property
         def reachable(self) -> bool:
@@ -540,6 +577,15 @@ class NodeMap():
             self.beacon_coords[beacon_id] = (node.x, node.y)
             self.coords_to_beacon[(node.x, node.y)] = beacon_id
 
+
+    def visit_node(self, coords: Coords):
+        node = self.get_node(coords)
+        if node is None:
+            node = self.Node(coords)
+            self.add_node(node)
+        node.visited = True
+
+
     def get_node(self, coords: Coords) -> Union[Node, None]:
         x,y = coords
         x = int(x/2 + 12)
@@ -560,6 +606,22 @@ class NodeMap():
     def add_new_path(self, origin: Coords, end: Coords, null_path = False):
         """Adds edge between nodes at origin and end coordinates, creating those node if they don't exist.
         If `null_path` is True, adds a null edge, meaning there is no path between those nodes."""
+
+        # check if origin or end is out of bounds
+        origin_x, origin_y = origin
+        origin_x, origin_y = int(origin_x/2 + 12), int(origin_y/2 + 5)
+        end_x, end_y = end
+        end_x, end_y = int(end_x/2 + 12), int(end_y/2 + 5)
+
+        if origin_x < 0 or origin_x >= len(self.nodes) \
+        or origin_y < 0 or origin_y >= len(self.nodes[0]):
+            self.handle_out_of_bounds(end, origin)
+            return
+        elif end_x < 0 or end_x >= len(self.nodes) \
+        or   end_y < 0 or end_y >= len(self.nodes[0]):
+            self.handle_out_of_bounds(origin, end)
+            return
+
 
         origin_node =  self.get_node(origin)
         end_node = self.get_node(end)
@@ -588,17 +650,34 @@ class NodeMap():
                 end_node.add_null_edge("down")
             #print(f"Added null edge between {origin} and {end}")
 
+
+    def handle_out_of_bounds(self, inbounds: Coords, outbounds: Coords):
+        node = self.get_node(inbounds)
+        if node is None:
+            node = self.Node(inbounds)
+            self.add_node(node)
+
+        if inbounds[0] < outbounds[0]:
+            node.add_null_edge("right")
+        elif inbounds[0] > outbounds[0]:
+            node.add_null_edge("left")
+        elif inbounds[1] < outbounds[1]:
+            node.add_null_edge("up")
+        else:
+            node.add_null_edge("down")
+
+
     def is_fully_explored(self) -> bool:
         return all( self.nodes[x][y].explored for x,y in self.node_coords )
 
     def get_closest_unexplored(self, curr: Coords) -> Coords:
         """Use a heuristic to pick closest unexplored node"""
         best = None
-        best_dist = 1000
+        best_dist = 10000
 
         for x,y in self.node_coords:
             node = self.nodes[x][y]
-            if not node.reachable or node.explored or (node.x, node.y) == curr: continue
+            if (not node.reachable) or node.explored or (node.x, node.y) == curr: continue
 
             # manhattan distance to node, plus 1, minus 1 if there exists a direct edge to node
             distance = abs(curr[0] - node.x) + abs(curr[1] - node.y) + 1 - int(curr in [(n.x, n.y) for n in node.edges])
@@ -606,8 +685,9 @@ class NodeMap():
             if distance < best_dist:
                 best = node
                 best_dist = distance
+
+        return None if best is None else (best.x, best.y)
         
-        return (best.x, best.y)
 
     def plan_path(self, start: Coords, goal: Coords) -> List[Coords]:
         """Returns path from start to goal, using A* search. Coordinates passed are world coordinates, not internal.
