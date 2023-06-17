@@ -8,8 +8,8 @@ from itertools import permutations
 Coords = Tuple[int, int]
 
 GOAL_THRESH = 0.05
-TURNING_THRESH = 0.1
-DRIVE_STRAIGHT_THRESH = 0.05
+TURNING_THRESH = 0.06
+DRIVE_STRAIGHT_THRESH = 0.025
 ROBOT_DIST_TO_NODE_THRESH = 0.1
 UPDATE_ANGLE_TOLERANCE = pi/2*0.06
 WALL_THICKNESS = 0.1
@@ -46,10 +46,10 @@ class MyRob(CRobLinkAngs):
         beacon_plans = {}
 
         # calculate best plan for every beacon pairing
-        for id1, coords1 in self.nodemap.beacon_coords.items():
-            for id2, coords2 in self.nodemap.beacon_coords.items():
-                if id1 == id2: continue
-                beacon_plans[(id1, id2)] = self.nodemap.plan_path(coords1, coords2)
+        # for id1, coords1 in self.nodemap.beacon_coords.items():
+        #     for id2, coords2 in self.nodemap.beacon_coords.items():
+        #         if id1 == id2: continue
+        #         beacon_plans[(id1, id2)] = self.nodemap.plan_path(coords1, coords2)
 
         # check all possible beacon sequences to see which has shortest path
         best_plan = None
@@ -61,7 +61,19 @@ class MyRob(CRobLinkAngs):
             plan = []
             for i in range(len(seq)-1):
                 pair = (seq[i], seq[i+1])
-                plan.extend( beacon_plans[pair][:-1] )
+                #plan.extend( beacon_plans[pair][:-1] )
+
+                coords1, coords2 = self.nodemap.beacon_coords[pair[0]], self.nodemap.beacon_coords[pair[1]]
+                subplan = self.nodemap.plan_path(coords1, coords2, plan[-1] if plan else None)
+
+                if subplan:
+                    plan.extend(subplan[:-1])
+                else:
+                    plan = None
+                    break
+            if plan is None:
+                continue
+
             plan.append((0,0))
 
             score = len(plan)
@@ -536,7 +548,7 @@ class NodeMap():
 
         @property
         def explored(self):
-            """A node is considered to be explored when 4 edges or null edges are known"""
+            """A node is considered to be explored when 4 edges or null edges are known, and has been visited"""
             return len(self.edges) + len(self.null_edges) == 4 and self.visited
         
         @property
@@ -652,6 +664,8 @@ class NodeMap():
 
 
     def handle_out_of_bounds(self, inbounds: Coords, outbounds: Coords):
+        """To be called when adding an edge between a node and a location that is out of bounds.
+        Adds a null edge to the in-bounds node towards the appropriate direction."""
         node = self.get_node(inbounds)
         if node is None:
             node = self.Node(inbounds)
@@ -671,7 +685,9 @@ class NodeMap():
         return all( self.nodes[x][y].explored for x,y in self.node_coords )
 
     def get_closest_unexplored(self, curr: Coords) -> Coords:
-        """Use a heuristic to pick closest unexplored node"""
+        """Use a heuristic to pick closest unexplored node.
+        The heuristic is the smallest manhattan distance plus 1, minus 1 if there is a direct edge between nodes.
+        This means directly adjacent reachable nodes take precedence."""
         best = None
         best_dist = 10000
 
@@ -689,7 +705,7 @@ class NodeMap():
         return None if best is None else (best.x, best.y)
         
 
-    def plan_path(self, start: Coords, goal: Coords) -> List[Coords]:
+    def plan_path(self, start: Coords, goal: Coords, avoid: Union[None, Coords] = None) -> List[Coords]:
         """Returns path from start to goal, using A* search. Coordinates passed are world coordinates, not internal.
         Algorithm adapted from https://en.wikipedia.org/wiki/A*_search_algorithm.
         """
@@ -715,6 +731,9 @@ class NodeMap():
         
             for neighbor in self.get_node(current).edges:
                 neighbor_coords = (neighbor.x, neighbor.y)
+
+                if avoid and neighbor_coords == avoid: continue  # don't consider node at `avoid coordinates`
+
                 tentative_g_score = g_score[current] + 1  # all edges have weight 1
                 if tentative_g_score < g_score.get(neighbor_coords, inf):
                     came_from[neighbor_coords] = current
