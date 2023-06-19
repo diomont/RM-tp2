@@ -131,6 +131,11 @@ class MapperRob(CRobLinkAngs):
         # else:
         #     new_sensor_x = max( min(sensor_pos_x, node_x+WALL_THICKNESS), node_x-WALL_THICKNESS )
 
+        # if new_sensor_x != sensor_pos_x:
+        #     print(f"Correcting X from {self.pose[0]} to {new_sensor_x - offset_x}")
+        # if new_sensor_y != sensor_pos_y:
+        #     print(f"Correcting Y from {self.pose[1]} to {new_sensor_y - offset_y}")
+
         # # apply correction
         # self.pose[0] = new_sensor_x - offset_x
         # self.pose[1] = new_sensor_y - offset_y
@@ -679,7 +684,7 @@ class NodeMap():
         return None if best is None else (best.x, best.y)
         
 
-    def plan_path(self, start: Coords, goal: Coords, avoid: Union[None, Coords] = None) -> List[Coords]:
+    def plan_path(self, start: Coords, goal: Coords) -> List[Coords]:
         """Returns path from start to goal, using A* search. Coordinates passed are world coordinates, not internal.
         Algorithm adapted from https://en.wikipedia.org/wiki/A*_search_algorithm.
         """
@@ -705,8 +710,6 @@ class NodeMap():
         
             for neighbor in self.get_node(current).edges:
                 neighbor_coords = (neighbor.x, neighbor.y)
-
-                if avoid and neighbor_coords == avoid: continue  # don't consider node at `avoid coordinates`
 
                 tentative_g_score = g_score[current] + 1  # all edges have weight 1
                 if tentative_g_score < g_score.get(neighbor_coords, inf):
