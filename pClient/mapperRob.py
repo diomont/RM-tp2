@@ -46,10 +46,10 @@ class MapperRob(CRobLinkAngs):
         beacon_plans = {}
 
         # calculate best plan for every beacon pairing
-        # for id1, coords1 in self.nodemap.beacon_coords.items():
-        #     for id2, coords2 in self.nodemap.beacon_coords.items():
-        #         if id1 == id2: continue
-        #         beacon_plans[(id1, id2)] = self.nodemap.plan_path(coords1, coords2)
+        for id1, coords1 in self.nodemap.beacon_coords.items():
+            for id2, coords2 in self.nodemap.beacon_coords.items():
+                if id1 == id2: continue
+                beacon_plans[(id1, id2)] = self.nodemap.plan_path(coords1, coords2)
 
         # check all possible beacon sequences to see which has shortest path
         best_plan = None
@@ -61,18 +61,7 @@ class MapperRob(CRobLinkAngs):
             plan = []
             for i in range(len(seq)-1):
                 pair = (seq[i], seq[i+1])
-                #plan.extend( beacon_plans[pair][:-1] )
-
-                coords1, coords2 = self.nodemap.beacon_coords[pair[0]], self.nodemap.beacon_coords[pair[1]]
-                subplan = self.nodemap.plan_path(coords1, coords2, plan[-1] if plan else None)
-
-                if subplan:
-                    plan.extend(subplan[:-1])
-                else:
-                    plan = None
-                    break
-            if plan is None:
-                continue
+                plan.extend( beacon_plans[pair][:-1] )
 
             plan.append((0,0))
 
