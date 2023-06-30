@@ -1,7 +1,0 @@
-distance from robot center to line sensor is 0.438
-investigate "complementary filter" to use both motionmodel and compass measures for orientation prediction
-->
-	new_ori = a * ori_motion_model + b * compass_measure
-	a + b = 1   # basically give each component a weight
-
-compass measures are in degrees
